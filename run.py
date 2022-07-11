@@ -5,6 +5,8 @@ from fastapi import FastAPI, Request
 from starlette.middleware.cors import CORSMiddleware
 
 # import nacos_app
+from starlette.staticfiles import StaticFiles
+
 from config.config import server
 from router.main import main_app
 
@@ -42,6 +44,7 @@ app.add_middleware(
 )
 
 app.include_router(main_app, prefix="", tags=["mainController"])
+app.mount("/", StaticFiles(directory="static"), name="static")
 
 if __name__ == '__main__':
     # nacos_app.start()
