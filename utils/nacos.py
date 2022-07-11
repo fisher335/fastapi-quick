@@ -3,12 +3,12 @@ import hashlib
 import urllib
 import json
 
-import logging
+import log
 
 LOG_FORMAT = '%(asctime)s -%(name)s- %(threadName)s-%(thread)d - %(levelname)s - %(message)s'
 DATE_FORMAT = "%m/%d/%Y %H:%M:%S %p"
 #日志配置
-logging.basicConfig(level=logging.INFO,format=LOG_FORMAT,datefmt=DATE_FORMAT)
+log.basicConfig(level=log.INFO, format=LOG_FORMAT, datefmt=DATE_FORMAT,file_name='logs/nacos.log')
 
 import threading
 
@@ -40,9 +40,9 @@ class nacos:
                                                         args=(dataId, group, tenant, md5Content, myConfig))
                         self.__threadHealthyDict[dataId + group + tenant] = int(time.time())
                         configThread.start()
-                        logging.info("配置信息监听线程重启成功: dataId=" + dataId + "; group=" + group + "; tenant=" + tenant)
+                        log.info("配置信息监听线程重启成功: dataId=" + dataId + "; group=" + group + "; tenant=" + tenant)
             except:
-                logging.exception("配置信息监听线程健康检查错误",exc_info=True)
+                log.exception("配置信息监听线程健康检查错误", exc_info=True)
             #检查registerThread
             try:
                 x = int(time.time()) - self.__registerDict["healthy"]
@@ -61,12 +61,12 @@ class nacos:
                                          namespaceId,groupName,clusterName,
                                          ephemeral,metadata,weight,enabled)
             except:
-                logging.exception("服务注册心跳进程健康检查失败",exc_info=True)
+                log.exception("服务注册心跳进程健康检查失败", exc_info=True)
 
     def healthyCheck(self):
         t = threading.Thread(target=self.__healthyCheckThreadRun)
         t.start()
-        logging.info("健康检查线程已启动")
+        log.info("健康检查线程已启动")
 
     def __configListeningThreadRun(self,dataId,group,tenant,md5Content,myConfig):
         getConfigUrl = "http://" + self.ip + ":" + str(self.port) + "/nacos/v1/cs/configs"
@@ -94,14 +94,14 @@ class nacos:
                     md5Content = md5.hexdigest()
                     for item in nacosJson:
                         myConfig[item] = nacosJson[item]
-                    logging.info("配置信息更新成功: dataId=" + dataId + "; group=" + group + "; tenant=" + tenant)
+                    log.info("配置信息更新成功: dataId=" + dataId + "; group=" + group + "; tenant=" + tenant)
                 except:
-                    logging.exception("配置信息更新失败：dataId=" + dataId + "; group=" + group + "; tenant=" + tenant,
-                                      exc_info=True)
+                    log.exception("配置信息更新失败：dataId=" + dataId + "; group=" + group + "; tenant=" + tenant,
+                                  exc_info=True)
                     break
 
     def config(self,myConfig,dataId,group="DEFAULT_GROUP",tenant="public"):
-        logging.info("正在获取配置: dataId="+dataId+"; group="+group+"; tenant="+tenant)
+        log.info("正在获取配置: dataId=" + dataId + "; group=" + group + "; tenant=" + tenant)
         getConfigUrl = "http://" + self.ip + ":" + str(self.port) + "/nacos/v1/cs/configs"
         params = {
             "dataId": dataId,
@@ -119,12 +119,12 @@ class nacos:
 
             for item in nacosJson:
                 myConfig[item] = nacosJson[item]
-            logging.info("配置获取成功：dataId="+dataId+"; group="+group+"; tenant="+tenant)
+            log.info("配置获取成功：dataId=" + dataId + "; group=" + group + "; tenant=" + tenant)
             configThread = threading.Thread(target=self.__configListeningThreadRun,args=(dataId,group,tenant,md5Content,myConfig))
             self.__threadHealthyDict[dataId+group+tenant] = int(time.time())
             configThread.start()
         except Exception:
-            logging.exception("配置获取失败：dataId="+dataId+"; group="+group+"; tenant="+tenant, exc_info=True)
+            log.exception("配置获取失败：dataId=" + dataId + "; group=" + group + "; tenant=" + tenant, exc_info=True)
 
     def __registerBeatThreadRun(self,serviceIp,servicePort,serviceName,
                                 groupName,namespaceId,metadata,weight):
@@ -153,13 +153,13 @@ class nacos:
                 re = requests.put(beatUrl[:-1])
                 if(re.json()['code'] != 10200):
                     self.__registerDict["healthy"] = int(time.time())-10
-                    logging.info(re.text)
+                    log.info(re.text)
                     break
             except json.JSONDecodeError:
                 self.__registerDict["healthy"] = int(time.time()) - 10
                 break
             except :
-                logging.exception("服务心跳维持失败！",exc_info=True)
+                log.exception("服务心跳维持失败！", exc_info=True)
                 break
 
     def registerService(self,serviceIp,servicePort,serviceName,namespaceId="public",
@@ -195,15 +195,15 @@ class nacos:
         try:
             re = requests.post(registerUrl, params=params)
             if (re.text == "ok"):
-                logging.info("服务注册成功。")
+                log.info("服务注册成功。")
                 beatThread = threading.Thread(target=self.__registerBeatThreadRun,
                                               args=(serviceIp,servicePort,serviceName,
                                               groupName,namespaceId,metadata,weight))
                 beatThread.start()
             else:
-                logging.error("服务注册失败 "+re.text)
+                log.error("服务注册失败 " + re.text)
         except:
-            logging.exception("服务注册失败",exc_info=True)
+            log.exception("服务注册失败", exc_info=True)
 
 def fallbackFun():
     return "request Error"
@@ -296,7 +296,7 @@ class nacosBalanceClient:
         index = self.__LoadBalanceDict[serviceName + group + namespaceId + "index"]
         l = len(self.__LoadBalanceDict[serviceName + group + namespaceId])
         if l == 0:
-            logging.error("无可用服务 serviceName: "+serviceName+";group: "+group+";namespaceId: "+namespaceId)
+            log.error("无可用服务 serviceName: " + serviceName + ";group: " + group + ";namespaceId: " + namespaceId)
             return ""
         if index >= l:
             self.__LoadBalanceDict[serviceName + group + namespaceId + "index"] = 1
@@ -320,10 +320,10 @@ class nacosBalanceClient:
                     try:
                         return self.__doRequest(method, requestUrl, requestParamJson, *args, **kwargs)
                     except requests.ConnectTimeout:
-                        logging.exception("链接超时   ",exc_info=True)
+                        log.exception("链接超时   ", exc_info=True)
                         return self.timeOutFun(self.serviceName,self.group,self.namespaceId,method,url)
                     except Exception as ex:
-                        logging.exception("链接失败   ", exc_info=True)
+                        log.exception("链接失败   ", exc_info=True)
                         return self.fallbackFun(self.serviceName,self.group,self.namespaceId,method,url,ex)
             mainPro.__name__ = f.__name__
             return mainPro

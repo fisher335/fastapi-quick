@@ -45,4 +45,4 @@ app.include_router(main_app, prefix="", tags=["mainController"])
 
 if __name__ == '__main__':
     # nacos_app.start()
-    uvicorn.run(app='run:app', host="0.0.0.0", port=server.port, reload=True, debug=True, log_level="warning")
+    uvicorn.run(app='run:app', host="127.0.0.1", port=server.port, reload=True, debug=True, log_level="debug")

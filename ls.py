@@ -1,13 +1,9 @@
 # coding=utf-8
-from utils.DBUtil import sqlite
+import log.log
 
 
-@sqlite
-def get_nav(cur):
-    cur.execute('select * from blog_nav ')
-    rows = cur.fetchall()
-    for row in rows:
-        print(row)
+def get_nav():
+    log.info('hello java')
 
 
 
