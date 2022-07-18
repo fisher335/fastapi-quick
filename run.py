@@ -2,12 +2,11 @@ import time
 
 import uvicorn
 from fastapi import FastAPI, Request
+# import nacos_app
+from fastapi.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware
 
-# import nacos_app
-from starlette.staticfiles import StaticFiles
-
-from config.config import server
+from config.config import SERVER_CONFIG
 from router.main import main_app
 
 app = FastAPI(
@@ -42,10 +41,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 app.include_router(main_app, prefix="", tags=["mainController"])
-app.mount("/", StaticFiles(directory="static"), name="static")
-
+# app.mount("/filedown", StaticFiles(directory="static/file"), name="filedown")
+# app.mount("/static", StaticFiles(directory="static/qrcode"), name="qrcode")
+print("Static Files mounted successfully")
 if __name__ == '__main__':
     # nacos_app.start()
-    uvicorn.run(app='run:app', host="127.0.0.1", port=server.port, reload=True, debug=True, log_level="debug")
+    uvicorn.run(app='run:app', host="127.0.0.1", port=SERVER_CONFIG.port, reload=True, debug=True, log_level="debug")
